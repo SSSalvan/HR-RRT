@@ -343,7 +343,7 @@
                                                     <div class="d-flex align-items-center">
                                                         <label style="width: 60%;" for="pdpt_jkm"
                                                                class="form-label font-weight-bold text-muted text-uppercase">JKM
-                                                            (0,03%):</label>
+                                                            (0,3%):</label>
                                                         <input style="width: 40%;" type="text"
                                                                class="form-control rupiah"
                                                                id="pdpt_jkm" name="pdpt_jkm" placeholder="0"

@@ -65,24 +65,37 @@ class BenefitController extends Controller
             return redirect()->back()
                 ->with('error', 'Data karyawan tidak ditemukan');
         }
-        $benefit = Benefit::where('employment_id', $employment->id)->first();
-        if (!$employment) {
-            return redirect()->back()
-                ->with('error', 'Data benefit tidak ditemukan');
+
+        $periode = $request->input('periode');
+        $benefit = Benefit::where('employment_id', $employment->id)
+            ->when($periode, function ($query, $periode) {
+                return $query->where('periode', $periode);
+            })->first();
+
+        if (!$benefit) {
+            if ($periode) {
+                $benefit = Benefit::create([
+                    'employment_id' => $employment->id,
+                    'periode' => $periode
+                ]);
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Data benefit tidak ditemukan');
+            }
         }
 
-        $request['basic_salary'] = str_replace(',', '', $request['basic_salary']);
-        $request['fixed_allowances'] = str_replace(',', '', $request['fixed_allowances']);
-        $request['meal_allowances'] = str_replace(',', '', $request['meal_allowances']);
-        $request['transport_allowances'] = str_replace(',', '', $request['transport_allowances']);
-        $request['overtime_allowances'] = str_replace(',', '', $request['overtime_allowances']);
-        $request['other_allowances'] = str_replace(',', '', $request['other_allowances']);
-        $request['performance_allowances'] = str_replace(',', '', $request['performance_allowances']);
-        $request['burden'] = str_replace(',', '', $request['burden']);
-        $request['potongan_pph_21'] = str_replace(',', '', $request['potongan_pph_21']);
-        $request['leave_rights'] = str_replace(',', '', $request['leave_rights']);
-        $request['leave_rights'] = str_replace(',', '', $request['leave_rights']);
-        $request['leave_rights'] = str_replace(',', '', $request['leave_rights']);
+        $fields = [
+            'basic_salary', 'fixed_allowances', 'meal_allowances',
+            'transport_allowances', 'overtime_allowances', 'other_allowances',
+            'performance_allowances', 'burden', 'potongan_pph_21', 'leave_rights',
+            'day_of_works', 'leaves', 'sick_leaves', 'absence_leaves'
+        ];
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                $request[$field] = str_replace(',', '', $request[$field]);
+            }
+        }
+
         $benefit->update($request->all());
 
         return redirect()->back()

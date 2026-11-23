@@ -31,8 +31,8 @@ class HistoryLeaveController extends Controller
             'date_leave' => 'required',
         ]);
 
-        if (HistoryLeave::where('date_leave', $request->input('date_leave'))->exists()) {
-            return redirect()->back()->with('error', 'Tanggal Cuti sudah ada.');
+        if (HistoryLeave::where('employment_id', $request->input('employment_id'))->where('date_leave', $request->input('date_leave'))->exists()) {
+            return redirect()->back()->with('error', 'Karyawan ini sudah mengambil cuti pada tanggal tersebut.');
         }
         if (!Employment::where('id', $request->input('employment_id'))->exists()) {
             return redirect()->back()->with('error', 'Data Karyawan Tidak ditemukan.');
@@ -91,15 +91,15 @@ class HistoryLeaveController extends Controller
 
     }
 
-    public function destroy($historyLeaveNik)
+    public function destroy($id)
     {
-        $historyLeave = HistoryLeave::where('nik', $historyLeaveNik)->first();
+        $historyLeave = HistoryLeave::find($id);
 
         if ($historyLeave) {
             $historyLeave->delete();
-            return redirect()->route('employee.index')->with('success', 'Data karyawan Berhasil di hapus');
+            return redirect()->back()->with('success', 'Data cuti berhasil dihapus');
         } else {
-            return redirect()->route('employee.index')->with('error', 'Data karyawan tidak ditemukan');
+            return redirect()->back()->with('error', 'Data cuti tidak ditemukan');
         }
     }
 
