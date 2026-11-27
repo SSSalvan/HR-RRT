@@ -323,6 +323,12 @@
     </div>
 </div>
 
+<style>
+    .swal2-container {
+        z-index: 999999 !important;
+    }
+</style>
+
 <!-- Load Face-API.js library from CDN -->
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
@@ -707,58 +713,49 @@
 
     // 6. Reset Wajah Terdaftar
     function resetFace(nik, name) {
-        Swal.fire({
-            title: 'Hapus Data Wajah?',
-            html: 'Apakah Anda yakin ingin menghapus data biometrik wajah <b>' + name + '</b> (' + nik + ')?<br><small class="text-danger">Karyawan ini tidak akan lagi otomatis terdeteksi.</small>',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then(function(result) {
-            if (result.isConfirmed) {
-                var csrf = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+        if (!confirm('Apakah Anda yakin ingin menghapus data biometrik wajah ' + name + ' (' + nik + ')?\nKaryawan ini tidak akan lagi otomatis terdeteksi.')) {
+            return;
+        }
 
-                $.ajax({
-                    url: '{{ route("absence.resetFace") }}',
-                    type: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrf,
-                        'Accept': 'application/json'
-                    },
-                    data: {
-                        nik: nik,
-                        _token: csrf
-                    },
-                    success: function(data) {
-                        if (data && data.success) {
-                            registeredEmployeesData = registeredEmployeesData.filter(function(e) { return e.nik !== nik; });
-                            buildFaceMatcher();
+        var csrf = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
 
-                            var row = document.getElementById('enrolled_row_' + nik);
-                            if (row) row.remove();
+        $.ajax({
+            url: '{{ route("absence.resetFace") }}',
+            type: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json'
+            },
+            data: {
+                nik: nik,
+                _token: csrf
+            },
+            success: function(data) {
+                if (data && data.success) {
+                    registeredEmployeesData = registeredEmployeesData.filter(function(e) { return e.nik !== nik; });
+                    buildFaceMatcher();
 
-                            if (registeredEmployeesData.length === 0) {
-                                var tbody = document.getElementById('enrolled_table_body');
-                                if (tbody) {
-                                    tbody.innerHTML = '<tr id="empty_enrolled_row"><td colspan="4" class="text-center text-muted py-4">Belum ada data wajah yang didaftarkan.</td></tr>';
-                                }
-                            }
+                    var row = document.getElementById('enrolled_row_' + nik);
+                    if (row) row.remove();
 
-                            Swal.fire('Terhapus!', data.message, 'success');
-                        } else {
-                            Swal.fire('Gagal', (data && data.message) ? data.message : 'Terjadi kesalahan.', 'error');
+                    if (registeredEmployeesData.length === 0) {
+                        var tbody = document.getElementById('enrolled_table_body');
+                        if (tbody) {
+                            tbody.innerHTML = '<tr id="empty_enrolled_row"><td colspan="4" class="text-center text-muted py-4">Belum ada data wajah yang didaftarkan.</td></tr>';
                         }
-                    },
-                    error: function(xhr) {
-                        var msg = 'Gagal menghapus data wajah.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            msg = xhr.responseJSON.message;
-                        }
-                        Swal.fire('Error', msg, 'error');
                     }
-                });
+
+                    alert('Data wajah ' + name + ' berhasil dihapus.');
+                } else {
+                    alert('Gagal: ' + ((data && data.message) ? data.message : 'Terjadi kesalahan.'));
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Gagal menghapus data wajah.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert('Error: ' + msg);
             }
         });
     }
