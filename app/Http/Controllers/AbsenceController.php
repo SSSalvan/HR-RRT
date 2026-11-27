@@ -77,12 +77,38 @@ class AbsenceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Wajah {$employment->name} ({$employment->nik}) berhasil didaftarkan ke sistem AI biometrik!",
+            'message' => "Wajah {$employment->name} ({$employment->nik}) berhasil didaftarkan ke sistem biometrik!",
             'data' => [
                 'nik' => $employment->nik,
                 'name' => $employment->name,
                 'face_descriptor' => $descriptor,
                 'image' => $imageName ? asset('images/absence/' . $imageName) : null
+            ]
+        ]);
+    }
+
+    public function resetFace(Request $request)
+    {
+        $request->validate(['nik' => 'required']);
+
+        $employment = Employment::where('nik', $request->input('nik'))
+            ->orWhere('id', $request->input('nik'))
+            ->first();
+
+        if (!$employment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data karyawan tidak ditemukan.'
+            ], 404);
+        }
+
+        $employment->update(['face_descriptor' => null]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Data biometrik wajah {$employment->name} ({$employment->nik}) berhasil direset.",
+            'data' => [
+                'nik' => $employment->nik
             ]
         ]);
     }

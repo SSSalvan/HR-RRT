@@ -17,6 +17,12 @@
                         <p class="text-muted mb-0">Verifikasi presensi kehadiran karyawan menggunakan kamera secara langsung</p>
                     </div>
                     <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                        <button type="button" class="btn btn-outline-info btn-sm mr-2 shadow-sm font-weight-bold" data-toggle="modal" data-target="#manageModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-people mr-1" viewBox="0 0 16 16">
+                                <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                            </svg>
+                            Data Wajah Terdaftar (<span id="btn_enrolled_count">{{ count($enrolledEmployees) }}</span>)
+                        </button>
                         <button type="button" class="btn btn-primary btn-sm mr-2 shadow-sm font-weight-bold" data-toggle="modal" data-target="#enrollModal">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-plus mr-1" viewBox="0 0 16 16">
                                 <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
@@ -55,7 +61,7 @@
                                 </div>
                             </div>
                             <div class="mt-2 mt-sm-0">
-                                <span id="enrolled_count_badge" class="badge badge-light border text-secondary px-2 py-1 font-weight-normal">
+                                <span id="enrolled_count_badge" class="badge badge-light border text-secondary px-2 py-1 font-weight-normal" style="cursor: pointer;" data-toggle="modal" data-target="#manageModal">
                                     {{ count($enrolledEmployees) }} Wajah Terdaftar
                                 </span>
                             </div>
@@ -180,7 +186,70 @@
     </div>
 </div>
 
-<!-- Modal Pendaftaran Wajah Karyawan -->
+<!-- Modal 1: Kelola Wajah Terdaftar (List Wajah & Reset) -->
+<div class="modal fade" id="manageModal" tabindex="-1" role="dialog" aria-labelledby="manageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title text-white font-weight-bold" id="manageModalLabel">
+                    <i class="ri-user-shared-line mr-1"></i> Data Wajah Karyawan Terdaftar
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-3">
+                    Berikut adalah daftar karyawan yang telah memiliki profil biometrik wajah. Jika wajah salah terdaftar pada karyawan lain, klik tombol <b>Hapus / Reset</b>.
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="60">Foto</th>
+                                <th>NIK</th>
+                                <th>Nama Karyawan</th>
+                                <th width="130" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="enrolled_table_body">
+                            @forelse($enrolledEmployees as $enrolled)
+                                <tr id="enrolled_row_{{ $enrolled->nik }}">
+                                    <td class="text-center">
+                                        @if($enrolled->image_path)
+                                            <img src="{{ asset('images/absence/' . $enrolled->image_path) }}" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">
+                                        @else
+                                            <div class="rounded-circle bg-info text-white text-center font-weight-bold" style="width: 38px; height: 38px; line-height: 38px; font-size: 11px;">OK</div>
+                                        @endif
+                                    </td>
+                                    <td class="font-weight-bold">{{ $enrolled->nik }}</td>
+                                    <td>{{ $enrolled->name }}</td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 font-weight-bold" onclick="resetFace('{{ $enrolled->nik }}', '{{ $enrolled->name }}')">
+                                            <i class="ri-delete-bin-line mr-1"></i> Hapus
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr id="empty_enrolled_row">
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Belum ada data wajah yang didaftarkan.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Pendaftaran Wajah Karyawan (Kamera Live ATAU Upload Foto) -->
 <div class="modal fade" id="enrollModal" tabindex="-1" role="dialog" aria-labelledby="enrollModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content shadow border-0">
@@ -205,12 +274,44 @@
                     </select>
                 </div>
 
-                <div class="enroll-preview-box text-center p-3 rounded bg-light border position-relative">
-                    <canvas id="enroll_canvas" class="rounded shadow-sm" width="280" height="210" style="object-fit: cover; background-color: #000;"></canvas>
-                    <div id="enroll_indicator" class="mt-2">
-                        <small class="text-muted">Arahkan wajah lurus ke arah kamera</small>
+                <!-- Pilihan Sumber: Kamera Webcam vs Upload File Foto -->
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold text-dark small text-uppercase d-block">Sumber Foto Wajah:</label>
+                    <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                        <label class="btn btn-sm btn-outline-primary active w-50" id="opt_src_cam" onclick="switchEnrollSource('camera')">
+                            <input type="radio" name="enroll_source" value="camera" checked autocomplete="off">
+                            <i class="ri-camera-line mr-1"></i> Kamera Webcam
+                        </label>
+                        <label class="btn btn-sm btn-outline-primary w-50" id="opt_src_upload" onclick="switchEnrollSource('upload')">
+                            <input type="radio" name="enroll_source" value="upload" autocomplete="off">
+                            <i class="ri-upload-2-line mr-1"></i> Upload File Foto
+                        </label>
                     </div>
                 </div>
+
+                <!-- Bagian 1: Preview Kamera Langsung -->
+                <div id="enroll_camera_box" class="enroll-preview-box text-center p-3 rounded bg-light border position-relative">
+                    <canvas id="enroll_canvas" class="rounded shadow-sm" width="280" height="210" style="object-fit: cover; background-color: #000;"></canvas>
+                    <div class="mt-2">
+                        <small class="text-muted">Arahkan wajah lurus ke arah webcam</small>
+                    </div>
+                </div>
+
+                <!-- Bagian 2: Upload File Foto Karyawan -->
+                <div id="enroll_upload_box" class="p-3 rounded bg-light border d-none">
+                    <div class="custom-file mb-3">
+                        <input type="file" class="custom-file-input" id="face_file_input" accept="image/jpeg,image/png,image/jpg" onchange="handleFileUpload(event)">
+                        <label class="custom-file-label" for="face_file_input" id="face_file_label">Pilih file foto (JPG/PNG)...</label>
+                    </div>
+                    <div class="text-center">
+                        <img id="upload_preview_img" class="rounded shadow-sm border d-none" width="220" height="220" style="object-fit: cover;">
+                        <div id="upload_empty_hint" class="py-4 text-muted small">
+                            <i class="ri-image-add-line ri-2x d-block mb-1"></i>
+                            Pilih pasfoto formal atau foto wajah karyawan
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
@@ -242,6 +343,8 @@
     var consecutiveMatchCount = 0;
     var currentMatchedNik = null;
     var currentMatchedName = null;
+    var currentEnrollSource = 'camera';
+    var uploadedBase64 = null;
 
     // Live Clock
     setInterval(function() {
@@ -275,7 +378,7 @@
         } catch(e) {}
     }
 
-    // 1. Inisialisasi Model Face-API dengan Resolusi Tinggi & Threshold Sensitif
+    // 1. Inisialisasi Model Face-API
     async function loadModels() {
         var MODEL_URL = 'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@master/weights';
         try {
@@ -296,7 +399,7 @@
         }
     }
 
-    // 2. Bangun FaceMatcher dengan ambang batas (distance threshold) yang lebih toleran (0.60)
+    // 2. Bangun FaceMatcher
     function buildFaceMatcher() {
         var labeledDescriptors = [];
         registeredEmployeesData.forEach(function(emp) {
@@ -317,13 +420,19 @@
         });
 
         if (labeledDescriptors.length > 0) {
-            // Menggunakan threshold 0.60 agar pencocokan lebih responsif dan akurat
             faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.60);
-            document.getElementById('enrolled_count_badge').innerText = labeledDescriptors.length + ' Wajah Terdaftar';
+            updateCountBadges(labeledDescriptors.length);
         } else {
             faceMatcher = null;
-            document.getElementById('enrolled_count_badge').innerText = '0 Wajah Terdaftar';
+            updateCountBadges(0);
         }
+    }
+
+    function updateCountBadges(count) {
+        var countEl = document.getElementById('btn_enrolled_count');
+        var badgeEl = document.getElementById('enrolled_count_badge');
+        if (countEl) countEl.innerText = count;
+        if (badgeEl) badgeEl.innerText = count + ' Wajah Terdaftar';
     }
 
     // 3. Start Webcam
@@ -354,7 +463,7 @@
         cameraStatusBadge.innerHTML = '<span class="spinner-grow spinner-grow-sm text-light mr-1" role="status" style="width: 7px; height: 7px;"></span> ' + text;
     }
 
-    // 4. Deteksi Wajah Real-Time Loop (Sensitif & Cepat)
+    // 4. Deteksi Wajah Real-Time Loop
     async function startDetectionLoop() {
         if (!isModelLoaded || !video || video.paused || video.ended) {
             requestAnimationFrame(startDetectionLoop);
@@ -362,7 +471,6 @@
         }
 
         try {
-            // inputSize 416 & scoreThreshold 0.25 untuk deteksi wajah yang jauh lebih responsif
             var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.25 });
             var detection = await faceapi.detectSingleFace(video, options)
                 .withFaceLandmarks()
@@ -377,7 +485,7 @@
                 var mirroredX = overlayCanvas.width - box.x - box.width;
 
                 var label = "Wajah Belum Terdaftar";
-                var boxColor = "#17a2b8"; // Biru/Cyan
+                var boxColor = "#17a2b8";
                 var isRecognized = false;
                 var recognizedNik = null;
                 var recognizedName = null;
@@ -390,20 +498,17 @@
                         recognizedName = parts[1] || parts[0];
 
                         label = recognizedName;
-                        boxColor = "#28a745"; // Hijau
+                        boxColor = "#28a745";
                         isRecognized = true;
                     }
                 }
 
-                // Ubah border guide jadi hijau jika terdeteksi
                 if (guide) {
                     guide.style.borderColor = isRecognized ? '#28a745' : 'rgba(255,255,255,0.7)';
                 }
 
-                // Gambar kotak wajah rapi
                 drawFaceBox(ctx, mirroredX, box.y, box.width, box.height, boxColor, label);
 
-                // Auto Check-In jika cocok selama 2 frame (~200ms)
                 if (isRecognized && !isProcessing) {
                     if (currentMatchedNik === recognizedNik) {
                         consecutiveMatchCount++;
@@ -440,7 +545,6 @@
         ctx.lineWidth = 2.5;
         ctx.strokeRect(x, y, width, height);
 
-        // Label Tag
         ctx.fillStyle = color;
         var textWidth = ctx.measureText(label).width;
         ctx.fillRect(x, y - 24, textWidth + 14, 24);
@@ -601,12 +705,73 @@
         list.insertBefore(newRow, list.firstChild);
     }
 
-    // Modal Pendaftaran Wajah
+    // 6. Reset Wajah Terdaftar
+    function resetFace(nik, name) {
+        Swal.fire({
+            title: 'Hapus Data Wajah?',
+            html: 'Apakah Anda yakin ingin menghapus data biometrik wajah <b>' + name + '</b> (' + nik + ')?<br><small class="text-danger">Karyawan ini tidak akan lagi otomatis terdeteksi.</small>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('{{ route("absence.resetFace") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ nik: nik })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        registeredEmployeesData = registeredEmployeesData.filter(e => e.nik !== nik);
+                        buildFaceMatcher();
+
+                        var row = document.getElementById('enrolled_row_' + nik);
+                        if (row) row.remove();
+
+                        if (registeredEmployeesData.length === 0) {
+                            var tbody = document.getElementById('enrolled_table_body');
+                            tbody.innerHTML = '<tr id="empty_enrolled_row"><td colspan="4" class="text-center text-muted py-4">Belum ada data wajah yang didaftarkan.</td></tr>';
+                        }
+
+                        Swal.fire('Terhapus', data.message, 'success');
+                    } else {
+                        Swal.fire('Gagal', data.message, 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Error', 'Gagal menghapus data wajah.', 'error');
+                });
+            }
+        });
+    }
+
+    // 7. Modal Pendaftaran Wajah (Kamera / Upload)
     var enrollCanvas = document.getElementById('enroll_canvas');
     var enrollInterval = null;
 
-    $('#enrollModal').on('shown.bs.modal', function () {
+    function switchEnrollSource(src) {
+        currentEnrollSource = src;
+        if (src === 'camera') {
+            $('#enroll_camera_box').removeClass('d-none');
+            $('#enroll_upload_box').addClass('d-none');
+            startEnrollCameraPreview();
+        } else {
+            $('#enroll_camera_box').addClass('d-none');
+            $('#enroll_upload_box').removeClass('d-none');
+            if (enrollInterval) clearInterval(enrollInterval);
+        }
+    }
+
+    function startEnrollCameraPreview() {
         var ctx = enrollCanvas.getContext('2d');
+        if (enrollInterval) clearInterval(enrollInterval);
         enrollInterval = setInterval(function() {
             if (video && !video.paused) {
                 ctx.save();
@@ -616,11 +781,35 @@
                 ctx.restore();
             }
         }, 100);
+    }
+
+    $('#enrollModal').on('shown.bs.modal', function () {
+        if (currentEnrollSource === 'camera') {
+            startEnrollCameraPreview();
+        }
     });
 
     $('#enrollModal').on('hidden.bs.modal', function () {
         if (enrollInterval) clearInterval(enrollInterval);
     });
+
+    function handleFileUpload(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var label = document.getElementById('face_file_label');
+        label.innerText = file.name;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedBase64 = e.target.result;
+            var img = document.getElementById('upload_preview_img');
+            img.src = uploadedBase64;
+            img.classList.remove('d-none');
+            document.getElementById('upload_empty_hint').classList.add('d-none');
+        };
+        reader.readAsDataURL(file);
+    }
 
     async function saveEnrolledFace() {
         var nik = $('#enroll_employee_select').val();
@@ -631,23 +820,46 @@
 
         var btn = document.getElementById('btn_save_face');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Memproses...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Menganalisis Wajah...';
 
         try {
             var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.25 });
-            var detection = await faceapi.detectSingleFace(video, options)
-                .withFaceLandmarks()
-                .withFaceDescriptor();
+            var detection = null;
+            var snapshotData = null;
+
+            if (currentEnrollSource === 'camera') {
+                detection = await faceapi.detectSingleFace(video, options)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                snapshotData = captureSnapshot();
+            } else {
+                var previewImg = document.getElementById('upload_preview_img');
+                if (!previewImg || !previewImg.src || previewImg.classList.contains('d-none')) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Simpan Wajah';
+                    Swal.fire('Pilih Foto', 'Silakan pilih file foto terlebih dahulu.', 'warning');
+                    return;
+                }
+                detection = await faceapi.detectSingleFace(previewImg, options)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                snapshotData = uploadedBase64;
+            }
 
             if (!detection) {
                 btn.disabled = false;
                 btn.innerHTML = 'Simpan Wajah';
-                Swal.fire('Wajah Belum Terlihat Jelas', 'Pastikan wajah menghadap lurus ke kamera dan pencahayaan cukup.', 'warning');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Wajah Belum Terdeteksi',
+                    text: currentEnrollSource === 'camera' 
+                        ? 'Pastikan wajah menghadap lurus ke kamera dan pencahayaan cukup.' 
+                        : 'Wajah tidak terdeteksi pada foto yang diunggah. Pastikan foto jelas dan menampilkan wajah bagian depan.'
+                });
                 return;
             }
 
             var descriptorArray = Array.from(detection.descriptor);
-            var snapshot = captureSnapshot();
 
             var response = await fetch('{{ route("absence.enrollFace") }}', {
                 method: 'POST',
@@ -658,7 +870,7 @@
                 body: JSON.stringify({
                     nik: nik,
                     descriptor: descriptorArray,
-                    image: snapshot
+                    image: snapshotData
                 })
             });
 
@@ -671,21 +883,51 @@
                 var found = registeredEmployeesData.find(e => e.nik === nik);
                 if (found) {
                     found.face_descriptor = descriptorArray;
+                    if (result.data.image) found.image_path = result.data.image;
                 } else {
                     registeredEmployeesData.push({
                         nik: nik,
                         name: empName,
-                        face_descriptor: descriptorArray
+                        face_descriptor: descriptorArray,
+                        image_path: result.data.image
                     });
                 }
 
                 buildFaceMatcher();
+
+                // Tambahkan atau update di modal Data Wajah Terdaftar
+                var emptyRow = document.getElementById('empty_enrolled_row');
+                if (emptyRow) emptyRow.remove();
+
+                var existingRow = document.getElementById('enrolled_row_' + nik);
+                if (existingRow) {
+                    existingRow.querySelector('td:nth-child(3)').innerText = empName;
+                } else {
+                    var tbody = document.getElementById('enrolled_table_body');
+                    var newTr = document.createElement('tr');
+                    newTr.id = 'enrolled_row_' + nik;
+                    newTr.innerHTML = 
+                        '<td class="text-center">' +
+                            (result.data.image 
+                                ? '<img src="' + result.data.image + '" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">' 
+                                : '<div class="rounded-circle bg-info text-white text-center font-weight-bold" style="width: 38px; height: 38px; line-height: 38px; font-size: 11px;">OK</div>') +
+                        '</td>' +
+                        '<td class="font-weight-bold">' + nik + '</td>' +
+                        '<td>' + empName + '</td>' +
+                        '<td class="text-center">' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 font-weight-bold" onclick="resetFace(\'' + nik + '\', \'' + empName + '\')">' +
+                                '<i class="ri-delete-bin-line mr-1"></i> Hapus' +
+                            '</button>' +
+                        '</td>';
+                    tbody.appendChild(newTr);
+                }
+
                 $('#enrollModal').modal('hide');
 
                 Swal.fire({
                     icon: 'success',
-                    title: 'Wajah Tersimpan',
-                    text: 'Wajah ' + empName + ' berhasil didaftarkan. Sekarang arahkan wajah ke kamera untuk presensi.',
+                    title: 'Wajah Berhasil Disimpan!',
+                    text: 'Wajah ' + empName + ' (' + nik + ') telah aktif. Sekarang arahkan wajah ke kamera untuk presensi.',
                     confirmButtonText: 'OK'
                 });
             } else {
