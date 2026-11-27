@@ -17,21 +17,24 @@ HR-RRT is a comprehensive Human Resource Management System designed to streamlin
 - Employee search and filtering
 - Complete data: biodata, contact, status, division, position, blood type, religion, etc.
 
-### ⏰ Attendance System
-- Import attendance data from CSV files
-- Filter attendance by date
-- Track check-in and check-out times
+### ⏰ Attendance & Smart Camera System
+- Real-time webcam face & camera attendance with photo snapshot verification
+- Automated biometrics face recognition sync from employee profile photos
+- Filter attendance by date and track check-in and check-out times
+- Import attendance data from CSV files and sync directly with payroll calculations
+- Integrated REST API & standalone Python client for CCTV / edge device integration
 
 ### 🏖️ Leave Management
 - Record employee leave history
 - Leave quota based on employment status
 - Leave history per employee
 
-### 💰 Payroll
-- Automatic salary calculation
+### 💰 Payroll & PPh 21 TER
+- Automatic salary calculation with Indonesian PPh 21 TER tax regulation (PP 58/2023 & PMK 168/2023)
+- PTKP status categories (Category A, B, C) with automatic bracket evaluation
 - Allowances (meal, transport, performance, overtime)
-- Deductions (BPJS, income tax, other deductions)
-- Export payslip (PDF & Excel)
+- Deductions (BPJS Ketenagakerjaan & Kesehatan, PPh 21 TER, other deductions)
+- Export payslip (PDF with official TER label & Excel)
 
 ### 🔐 Role & Permission
 - Roles: Admin & User
@@ -83,7 +86,7 @@ employment_roles ─────┘                  ├──► history_leaves
 
 1. **Clone Repository**
 ```bash
-git clone https://github.com/IlhamriSKY/HR-RRT.git
+git clone https://github.com/SSSalvan/HR-RRT.git
 cd HR-RRT
 ```
 
