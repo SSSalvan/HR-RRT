@@ -89,10 +89,17 @@ class AbsenceController extends Controller
 
     public function resetFace(Request $request)
     {
-        $request->validate(['nik' => 'required']);
+        $nik = $request->input('nik') ?? $request->nik;
 
-        $employment = Employment::where('nik', $request->input('nik'))
-            ->orWhere('id', $request->input('nik'))
+        if (!$nik) {
+            return response()->json([
+                'success' => false,
+                'message' => 'NIK karyawan tidak ditemukan.'
+            ], 422);
+        }
+
+        $employment = Employment::where('nik', $nik)
+            ->orWhere('id', $nik)
             ->first();
 
         if (!$employment) {

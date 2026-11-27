@@ -716,37 +716,48 @@
             cancelButtonColor: '#6c757d',
             confirmButtonText: 'Ya, Hapus!',
             cancelButtonText: 'Batal'
-        }).then((result) => {
+        }).then(function(result) {
             if (result.isConfirmed) {
-                fetch('{{ route("absence.resetFace") }}', {
-                    method: 'POST',
+                var csrf = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+                $.ajax({
+                    url: '{{ route("absence.resetFace") }}',
+                    type: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': csrf,
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ nik: nik })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        registeredEmployeesData = registeredEmployeesData.filter(e => e.nik !== nik);
-                        buildFaceMatcher();
+                    data: {
+                        nik: nik,
+                        _token: csrf
+                    },
+                    success: function(data) {
+                        if (data && data.success) {
+                            registeredEmployeesData = registeredEmployeesData.filter(function(e) { return e.nik !== nik; });
+                            buildFaceMatcher();
 
-                        var row = document.getElementById('enrolled_row_' + nik);
-                        if (row) row.remove();
+                            var row = document.getElementById('enrolled_row_' + nik);
+                            if (row) row.remove();
 
-                        if (registeredEmployeesData.length === 0) {
-                            var tbody = document.getElementById('enrolled_table_body');
-                            tbody.innerHTML = '<tr id="empty_enrolled_row"><td colspan="4" class="text-center text-muted py-4">Belum ada data wajah yang didaftarkan.</td></tr>';
+                            if (registeredEmployeesData.length === 0) {
+                                var tbody = document.getElementById('enrolled_table_body');
+                                if (tbody) {
+                                    tbody.innerHTML = '<tr id="empty_enrolled_row"><td colspan="4" class="text-center text-muted py-4">Belum ada data wajah yang didaftarkan.</td></tr>';
+                                }
+                            }
+
+                            Swal.fire('Terhapus!', data.message, 'success');
+                        } else {
+                            Swal.fire('Gagal', (data && data.message) ? data.message : 'Terjadi kesalahan.', 'error');
                         }
-
-                        Swal.fire('Terhapus', data.message, 'success');
-                    } else {
-                        Swal.fire('Gagal', data.message, 'error');
+                    },
+                    error: function(xhr) {
+                        var msg = 'Gagal menghapus data wajah.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        Swal.fire('Error', msg, 'error');
                     }
-                })
-                .catch(() => {
-                    Swal.fire('Error', 'Gagal menghapus data wajah.', 'error');
                 });
             }
         });
