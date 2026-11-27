@@ -200,7 +200,7 @@
             </div>
             <div class="modal-body p-4">
                 <p class="text-muted small mb-3">
-                    Berikut adalah daftar karyawan yang telah memiliki profil biometrik wajah. Jika wajah salah terdaftar pada karyawan lain, klik tombol <b>Hapus / Reset</b>.
+                    Berikut adalah daftar karyawan yang telah memiliki profil biometrik wajah. Jika wajah salah terdaftar pada karyawan lain, klik tombol <b>Hapus</b>.
                 </p>
 
                 <div class="table-responsive">
@@ -217,8 +217,8 @@
                             @forelse($enrolledEmployees as $enrolled)
                                 <tr id="enrolled_row_{{ $enrolled->nik }}">
                                     <td class="text-center">
-                                        @if($enrolled->image_path)
-                                            <img src="{{ asset('images/absence/' . $enrolled->image_path) }}" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">
+                                        @if($enrolled->photo_url)
+                                            <img src="{{ $enrolled->photo_url }}" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">
                                         @else
                                             <div class="rounded-circle bg-info text-white text-center font-weight-bold" style="width: 38px; height: 38px; line-height: 38px; font-size: 11px;">OK</div>
                                         @endif
@@ -249,7 +249,7 @@
     </div>
 </div>
 
-<!-- Modal 2: Pendaftaran Wajah Karyawan (Kamera Live ATAU Upload Foto) -->
+<!-- Modal 2: Pendaftaran Wajah Karyawan -->
 <div class="modal fade" id="enrollModal" tabindex="-1" role="dialog" aria-labelledby="enrollModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content shadow border-0">
@@ -264,27 +264,31 @@
             <div class="modal-body p-4">
                 <div class="form-group mb-3">
                     <label class="font-weight-bold text-dark small text-uppercase">Pilih Karyawan:</label>
-                    <select id="enroll_employee_select" class="form-control select2" style="width: 100%;">
+                    <select id="enroll_employee_select" class="form-control select2" style="width: 100%;" onchange="onEnrollEmployeeChanged()">
                         <option value="">-- Pilih Nama / NIK Karyawan --</option>
                         @foreach($employments as $emp)
-                            <option value="{{ $emp->nik }}" data-name="{{ $emp->name }}">
+                            <option value="{{ $emp->nik }}" data-name="{{ $emp->name }}" data-photo="{{ $emp->photo_url ?? '' }}">
                                 {{ $emp->nik }} - {{ $emp->name }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                <!-- Pilihan Sumber: Kamera Webcam vs Upload File Foto -->
+                <!-- Pilihan Sumber: Kamera Webcam vs Foto Profil Karyawan vs Upload File -->
                 <div class="form-group mb-3">
                     <label class="font-weight-bold text-dark small text-uppercase d-block">Sumber Foto Wajah:</label>
                     <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
-                        <label class="btn btn-sm btn-outline-primary active w-50" id="opt_src_cam" onclick="switchEnrollSource('camera')">
+                        <label class="btn btn-sm btn-outline-primary active" id="opt_src_cam" onclick="switchEnrollSource('camera')">
                             <input type="radio" name="enroll_source" value="camera" checked autocomplete="off">
                             <i class="ri-camera-line mr-1"></i> Kamera Webcam
                         </label>
-                        <label class="btn btn-sm btn-outline-primary w-50" id="opt_src_upload" onclick="switchEnrollSource('upload')">
+                        <label class="btn btn-sm btn-outline-success d-none" id="opt_src_profile" onclick="switchEnrollSource('profile')">
+                            <input type="radio" name="enroll_source" value="profile" autocomplete="off">
+                            <i class="ri-user-star-line mr-1"></i> Foto Data Karyawan
+                        </label>
+                        <label class="btn btn-sm btn-outline-primary" id="opt_src_upload" onclick="switchEnrollSource('upload')">
                             <input type="radio" name="enroll_source" value="upload" autocomplete="off">
-                            <i class="ri-upload-2-line mr-1"></i> Upload File Foto
+                            <i class="ri-upload-2-line mr-1"></i> Upload File
                         </label>
                     </div>
                 </div>
@@ -297,7 +301,16 @@
                     </div>
                 </div>
 
-                <!-- Bagian 2: Upload File Foto Karyawan -->
+                <!-- Bagian 2: Foto dari Data Karyawan -->
+                <div id="enroll_profile_box" class="p-3 rounded bg-light border d-none text-center">
+                    <img id="profile_existing_img" class="rounded shadow-sm border mb-2" width="200" height="200" style="object-fit: cover;">
+                    <div class="small text-success font-weight-bold mb-1">
+                        ✓ Foto profil karyawan ditemukan dari database
+                    </div>
+                    <small class="text-muted d-block">Klik tombol Simpan Wajah di bawah untuk memproses biometrik dari foto ini.</small>
+                </div>
+
+                <!-- Bagian 3: Upload File Foto -->
                 <div id="enroll_upload_box" class="p-3 rounded bg-light border d-none">
                     <div class="custom-file mb-3">
                         <input type="file" class="custom-file-input" id="face_file_input" accept="image/jpeg,image/png,image/jpg" onchange="handleFileUpload(event)">
@@ -339,8 +352,9 @@
     var clockElement = document.getElementById('live_clock');
     var cameraStatusBadge = document.getElementById('camera_status_badge');
 
-    // Data Karyawan Terdaftar
+    // Data Karyawan Terdaftar & Pending Sync
     var registeredEmployeesData = @json($enrolledEmployees);
+    var pendingPhotoEmployeesData = @json($pendingPhotoEmployees);
     var faceMatcher = null;
     var isModelLoaded = false;
     var isProcessing = false;
@@ -384,7 +398,7 @@
         } catch(e) {}
     }
 
-    // 1. Inisialisasi Model Face-API
+    // 1. Inisialisasi Model Face-API & Sinkronisasi Foto Data Karyawan Otomatis
     async function loadModels() {
         var MODEL_URL = 'https://cdn.jsdelivr.net/gh/cgarciagl/face-api.js@master/weights';
         try {
@@ -398,10 +412,88 @@
             isModelLoaded = true;
             buildFaceMatcher();
             updateBadge('success', 'Kamera Siap');
+
+            // Sinkronisasi foto profil karyawan yang sudah ada di Data Karyawan secara otomatis
+            if (pendingPhotoEmployeesData && pendingPhotoEmployeesData.length > 0) {
+                syncPendingPhotos();
+            }
+
             startDetectionLoop();
         } catch (err) {
             console.error("Model load error:", err);
             updateBadge('danger', 'Koneksi Model Terputus');
+        }
+    }
+
+    // Sinkronisasi Otomatis Foto Profil dari Data Karyawan
+    async function syncPendingPhotos() {
+        var options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.25 });
+        var csrf = $('meta[name="csrf-token"]').attr('content') || '{{ csrf_token() }}';
+
+        for (var i = 0; i < pendingPhotoEmployeesData.length; i++) {
+            var emp = pendingPhotoEmployeesData[i];
+            if (!emp.photo_url) continue;
+
+            try {
+                var img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = emp.photo_url;
+                await new Promise(function(resolve) {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                });
+
+                if (img.naturalWidth > 0) {
+                    var detection = await faceapi.detectSingleFace(img, options)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (detection && detection.descriptor) {
+                        var descArray = Array.from(detection.descriptor);
+                        emp.face_descriptor = descArray;
+                        registeredEmployeesData.push(emp);
+                        buildFaceMatcher();
+
+                        // Simpan ke database di latar belakang
+                        $.ajax({
+                            url: '{{ route("absence.enrollFace") }}',
+                            type: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                            data: {
+                                nik: emp.nik,
+                                descriptor: JSON.stringify(descArray),
+                                _token: csrf
+                            }
+                        });
+
+                        // Tambahkan ke tabel modal data wajah terdaftar
+                        var emptyRow = document.getElementById('empty_enrolled_row');
+                        if (emptyRow) emptyRow.remove();
+
+                        var tbody = document.getElementById('enrolled_table_body');
+                        if (tbody && !document.getElementById('enrolled_row_' + emp.nik)) {
+                            var tr = document.createElement('tr');
+                            tr.id = 'enrolled_row_' + emp.nik;
+                            tr.innerHTML = 
+                                '<td class="text-center">' +
+                                    '<img src="' + emp.photo_url + '" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">' +
+                                '</td>' +
+                                '<td class="font-weight-bold">' + emp.nik + '</td>' +
+                                '<td>' + emp.name + '</td>' +
+                                '<td class="text-center">' +
+                                    '<button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 font-weight-bold" onclick="resetFace(\'' + emp.nik + '\', \'' + emp.name + '\')">' +
+                                        '<i class="ri-delete-bin-line mr-1"></i> Hapus' +
+                                    '</button>' +
+                                '</td>';
+                            tbody.appendChild(tr);
+                        }
+
+                        console.log('✓ Foto ' + emp.name + ' dari Data Karyawan berhasil diaktifkan untuk deteksi wajah!');
+                    }
+                }
+            } catch(e) {
+                console.warn('Sync photo failed for ' + emp.name, e);
+            }
         }
     }
 
@@ -760,18 +852,41 @@
         });
     }
 
-    // 7. Modal Pendaftaran Wajah (Kamera / Upload)
+    // 7. Modal Pendaftaran Wajah
     var enrollCanvas = document.getElementById('enroll_canvas');
     var enrollInterval = null;
 
+    function onEnrollEmployeeChanged() {
+        var opt = $('#enroll_employee_select option:selected');
+        var photoUrl = opt.data('photo');
+
+        if (photoUrl) {
+            $('#opt_src_profile').removeClass('d-none');
+            $('#profile_existing_img').attr('src', photoUrl);
+            switchEnrollSource('profile');
+            $('#opt_src_profile').addClass('active').find('input').prop('checked', true);
+            $('#opt_src_cam').removeClass('active');
+            $('#opt_src_upload').removeClass('active');
+        } else {
+            $('#opt_src_profile').addClass('d-none');
+            switchEnrollSource('camera');
+            $('#opt_src_cam').addClass('active').find('input').prop('checked', true);
+        }
+    }
+
     function switchEnrollSource(src) {
         currentEnrollSource = src;
+        $('#enroll_camera_box').addClass('d-none');
+        $('#enroll_profile_box').addClass('d-none');
+        $('#enroll_upload_box').addClass('d-none');
+
         if (src === 'camera') {
             $('#enroll_camera_box').removeClass('d-none');
-            $('#enroll_upload_box').addClass('d-none');
             startEnrollCameraPreview();
+        } else if (src === 'profile') {
+            $('#enroll_profile_box').removeClass('d-none');
+            if (enrollInterval) clearInterval(enrollInterval);
         } else {
-            $('#enroll_camera_box').addClass('d-none');
             $('#enroll_upload_box').removeClass('d-none');
             if (enrollInterval) clearInterval(enrollInterval);
         }
@@ -840,6 +955,12 @@
                     .withFaceLandmarks()
                     .withFaceDescriptor();
                 snapshotData = captureSnapshot();
+            } else if (currentEnrollSource === 'profile') {
+                var profileImg = document.getElementById('profile_existing_img');
+                detection = await faceapi.detectSingleFace(profileImg, options)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                snapshotData = null; // Sudah ada di server
             } else {
                 var previewImg = document.getElementById('upload_preview_img');
                 if (!previewImg || !previewImg.src || previewImg.classList.contains('d-none')) {
@@ -860,14 +981,20 @@
                 Swal.fire({
                     icon: 'warning',
                     title: 'Wajah Belum Terdeteksi',
-                    text: currentEnrollSource === 'camera' 
-                        ? 'Pastikan wajah menghadap lurus ke kamera dan pencahayaan cukup.' 
-                        : 'Wajah tidak terdeteksi pada foto yang diunggah. Pastikan foto jelas dan menampilkan wajah bagian depan.'
+                    text: 'Pastikan foto menampilkan wajah bagian depan dengan jelas dan pencahayaan cukup.'
                 });
                 return;
             }
 
             var descriptorArray = Array.from(detection.descriptor);
+
+            var payload = {
+                nik: nik,
+                descriptor: descriptorArray
+            };
+            if (snapshotData) {
+                payload.image = snapshotData;
+            }
 
             var response = await fetch('{{ route("absence.enrollFace") }}', {
                 method: 'POST',
@@ -875,11 +1002,7 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-                body: JSON.stringify({
-                    nik: nik,
-                    descriptor: descriptorArray,
-                    image: snapshotData
-                })
+                body: JSON.stringify(payload)
             });
 
             var result = await response.json();
@@ -891,19 +1014,18 @@
                 var found = registeredEmployeesData.find(e => e.nik === nik);
                 if (found) {
                     found.face_descriptor = descriptorArray;
-                    if (result.data.image) found.image_path = result.data.image;
+                    if (result.data.image) found.photo_url = result.data.image;
                 } else {
                     registeredEmployeesData.push({
                         nik: nik,
                         name: empName,
                         face_descriptor: descriptorArray,
-                        image_path: result.data.image
+                        photo_url: result.data.image || $('#enroll_employee_select option:selected').data('photo')
                     });
                 }
 
                 buildFaceMatcher();
 
-                // Tambahkan atau update di modal Data Wajah Terdaftar
                 var emptyRow = document.getElementById('empty_enrolled_row');
                 if (emptyRow) emptyRow.remove();
 
@@ -914,10 +1036,11 @@
                     var tbody = document.getElementById('enrolled_table_body');
                     var newTr = document.createElement('tr');
                     newTr.id = 'enrolled_row_' + nik;
+                    var displayImg = result.data.image || $('#enroll_employee_select option:selected').data('photo');
                     newTr.innerHTML = 
                         '<td class="text-center">' +
-                            (result.data.image 
-                                ? '<img src="' + result.data.image + '" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">' 
+                            (displayImg 
+                                ? '<img src="' + displayImg + '" width="38" height="38" class="rounded-circle shadow-sm" style="object-fit: cover;">' 
                                 : '<div class="rounded-circle bg-info text-white text-center font-weight-bold" style="width: 38px; height: 38px; line-height: 38px; font-size: 11px;">OK</div>') +
                         '</td>' +
                         '<td class="font-weight-bold">' + nik + '</td>' +

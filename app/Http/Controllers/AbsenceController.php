@@ -29,9 +29,25 @@ class AbsenceController extends Controller
     public function scan()
     {
         $employments = Employment::with('employmentRole', 'employmentDivision')->orderBy('name')->get();
-        $enrolledEmployees = Employment::whereNotNull('face_descriptor')
-            ->select('id', 'nik', 'name', 'face_descriptor', 'image_path')
-            ->get();
+
+        foreach ($employments as $emp) {
+            $emp->photo_url = null;
+            if ($emp->image_path) {
+                if (file_exists(public_path('images/employment/' . $emp->image_path))) {
+                    $emp->photo_url = asset('images/employment/' . $emp->image_path);
+                } elseif (file_exists(public_path('images/absence/' . $emp->image_path))) {
+                    $emp->photo_url = asset('images/absence/' . $emp->image_path);
+                }
+            }
+        }
+
+        $enrolledEmployees = $employments->filter(function ($emp) {
+            return !empty($emp->face_descriptor);
+        })->values();
+
+        $pendingPhotoEmployees = $employments->filter(function ($emp) {
+            return !empty($emp->photo_url) && empty($emp->face_descriptor);
+        })->values();
 
         $todayAbsences = Absence::with('employment')
             ->where('date_in', date('Y-m-d'))
@@ -39,7 +55,7 @@ class AbsenceController extends Controller
             ->take(10)
             ->get();
 
-        return view('absence.scan', compact('employments', 'enrolledEmployees', 'todayAbsences'));
+        return view('absence.scan', compact('employments', 'enrolledEmployees', 'pendingPhotoEmployees', 'todayAbsences'));
     }
 
     public function enrollFace(Request $request)
