@@ -13,7 +13,10 @@ class Absence extends Model
         'date_in',
         'time_in',
         'time_out',
-        'employment_id'
+        'employment_id',
+        'image_path',
+        'method',
+        'status'
     ];
 
     public function employment()

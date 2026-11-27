@@ -44,6 +44,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index']);
 
     Route::resource('employee', EmployeeController::class);
+    Route::get('/absence/scan', [AbsenceController::class, 'scan'])->name('absence.scan');
+    Route::post('/absence/web-checkin', [AbsenceController::class, 'webCheckIn'])->name('absence.webCheckIn');
     Route::resource('absence', AbsenceController::class);
     Route::resource('historyLeave', HistoryLeaveController::class);
     Route::resource('benefit', BenefitController::class);

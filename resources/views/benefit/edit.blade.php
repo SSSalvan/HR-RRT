@@ -398,7 +398,18 @@
                                                                value="{{$benefit->leave_rights}}" min="0" required>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6 mb-3">
+                                                <div class="col-md-12 mb-3">
+                                                    <div class="alert alert-info py-2 d-flex justify-content-between align-items-center mb-0">
+                                                        <small>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-camera mr-1" viewBox="0 0 16 16">
+                                                                <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 7.829 3h.342a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 11.828 5H13a1 1 0 0 1 1 1v6z"/>
+                                                            </svg>
+                                                            <strong>Sinkronisasi Presensi Otomatis:</strong> Terdeteksi Hadir <b>{{ $hadirCount ?? 0 }} hari</b> & Cuti <b>{{ $leavesCount ?? 0 }} hari</b> pada periode {{ $benefit->periode ?? date('Y-m') }}.
+                                                        </small>
+                                                        <button type="button" class="btn btn-sm btn-info py-0 px-2 font-weight-bold" onclick="syncAttendanceToForm({{ $hadirCount ?? 0 }}, {{ $leavesCount ?? 0 }})">
+                                                            Terapkan ke Form
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <div class="col-md-6 mb-3">
                                                     <div class="d-flex align-items-center">
@@ -647,6 +658,19 @@
             hitung();
             formatRupiahInputs();
         });
+
+        function syncAttendanceToForm(hadir, cuti) {
+            var hariKerja = parseInt(document.getElementById('day_of_works').value) || 19;
+            var sick = parseInt(document.getElementById('sick_leaves').value) || 0;
+            var leavesInput = document.getElementById('leaves');
+            var absenceInput = document.getElementById('absence_leaves');
+
+            if (leavesInput) leavesInput.value = cuti;
+            var bolos = Math.max(0, hariKerja - hadir - cuti - sick);
+            if (absenceInput) absenceInput.value = bolos;
+
+            hitung();
+        }
 
         function formatRupiahInputs() {
             var rupiahInputs = document.getElementsByClassName('rupiah');

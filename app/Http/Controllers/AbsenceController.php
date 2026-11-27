@@ -12,23 +12,261 @@ class AbsenceController extends Controller
 {
     public function index(Request $request)
     {
-        $date_in = $request->input('date_in'); // Get the 'date_in' parameter from the request
+        $date_in = $request->input('date_in');
 
-        $query = Absence::latest(); // Start with the base query
+        $query = Absence::with(['employment.employmentRole', 'employment.employmentDivision'])->latest();
 
-        // Check if 'date_in' parameter is provided, and if so, add the filter condition
         if ($date_in) {
             $query->where('date_in', $date_in);
         }
 
-        $absences = $query->get(); // Execute the query and paginate the results
+        $absences = $query->paginate(15);
 
         return view('absence.index', compact('absences', 'date_in'))
-            ->with('i', (request()->input('page', 1) - 1) * 5);
+            ->with('i', (request()->input('page', 1) - 1) * 15);
+    }
+
+    public function scan()
+    {
+        $employments = Employment::with('employmentRole', 'employmentDivision')->orderBy('name')->get();
+        $todayAbsences = Absence::with('employment')
+            ->where('date_in', date('Y-m-d'))
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return view('absence.scan', compact('employments', 'todayAbsences'));
+    }
+
+    public function webCheckIn(Request $request)
+    {
+        $request->validate([
+            'nik' => 'required',
+            'type' => 'required|in:in,out',
+        ]);
+
+        $employment = Employment::where('nik', $request->input('nik'))
+            ->orWhere('id', $request->input('nik'))
+            ->first();
+
+        if (!$employment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data karyawan dengan NIK / ID tersebut tidak ditemukan.'
+            ], 404);
+        }
+
+        $today = date('Y-m-d');
+        $timeNow = date('H:i:s');
+        $type = $request->input('type');
+
+        // Handle snapshot image if present
+        $imageName = null;
+        if ($request->filled('image')) {
+            $imageName = $this->saveBase64Image($request->input('image'), $employment->nik);
+        }
+
+        $absence = Absence::where('employment_id', $employment->id)
+            ->where('date_in', $today)
+            ->first();
+
+        if ($type === 'in') {
+            if ($absence && $absence->time_in) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "{$employment->name} sudah melakukan presensi masuk hari ini pada pukul {$absence->time_in}."
+                ], 422);
+            }
+
+            $status = ($timeNow > '08:30:00') ? 'Terlambat' : 'Hadir';
+
+            if ($absence) {
+                $absence->update([
+                    'time_in' => $timeNow,
+                    'method' => 'camera',
+                    'status' => $status,
+                    'image_path' => $imageName ?? $absence->image_path
+                ]);
+            } else {
+                $absence = Absence::create([
+                    'employment_id' => $employment->id,
+                    'date_in' => $today,
+                    'time_in' => $timeNow,
+                    'time_out' => null,
+                    'method' => 'camera',
+                    'status' => $status,
+                    'image_path' => $imageName
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Presensi MASUK berhasil! Selamat bekerja, {$employment->name}.",
+                'data' => [
+                    'name' => $employment->name,
+                    'nik' => $employment->nik,
+                    'time' => $timeNow,
+                    'status' => $status,
+                    'type' => 'Masuk',
+                    'image' => $imageName ? asset('images/absence/' . $imageName) : null
+                ]
+            ]);
+        } else {
+            // Type == 'out' (Pulang)
+            if ($absence) {
+                $absence->update([
+                    'time_out' => $timeNow,
+                    'image_path' => $imageName ?? $absence->image_path
+                ]);
+            } else {
+                $absence = Absence::create([
+                    'employment_id' => $employment->id,
+                    'date_in' => $today,
+                    'time_in' => null,
+                    'time_out' => $timeNow,
+                    'method' => 'camera',
+                    'status' => 'Hadir',
+                    'image_path' => $imageName
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Presensi PULANG berhasil! Terima kasih atas kerja keras Anda hari ini, {$employment->name}.",
+                'data' => [
+                    'name' => $employment->name,
+                    'nik' => $employment->nik,
+                    'time' => $timeNow,
+                    'type' => 'Pulang',
+                    'image' => $imageName ? asset('images/absence/' . $imageName) : null
+                ]
+            ]);
+        }
+    }
+
+    public function apiCheckIn(Request $request)
+    {
+        $request->validate([
+            'nik' => 'required',
+            'type' => 'required|in:in,out',
+        ]);
+
+        $employment = Employment::where('nik', $request->input('nik'))->first();
+        if (!$employment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Employee with NIK ' . $request->input('nik') . ' not found.'
+            ], 404);
+        }
+
+        $today = date('Y-m-d');
+        $timeNow = $request->input('time') ?: date('H:i:s');
+        $type = $request->input('type');
+
+        $imageName = null;
+        if ($request->filled('image')) {
+            $imageName = $this->saveBase64Image($request->input('image'), $employment->nik);
+        }
+
+        $absence = Absence::where('employment_id', $employment->id)->where('date_in', $today)->first();
+
+        if ($type === 'in') {
+            $status = ($timeNow > '08:30:00') ? 'Terlambat' : 'Hadir';
+            if ($absence) {
+                $absence->update([
+                    'time_in' => $timeNow,
+                    'method' => 'api_vision',
+                    'status' => $status,
+                    'image_path' => $imageName ?? $absence->image_path
+                ]);
+            } else {
+                $absence = Absence::create([
+                    'employment_id' => $employment->id,
+                    'date_in' => $today,
+                    'time_in' => $timeNow,
+                    'time_out' => null,
+                    'method' => 'api_vision',
+                    'status' => $status,
+                    'image_path' => $imageName
+                ]);
+            }
+        } else {
+            if ($absence) {
+                $absence->update([
+                    'time_out' => $timeNow,
+                    'image_path' => $imageName ?? $absence->image_path
+                ]);
+            } else {
+                $absence = Absence::create([
+                    'employment_id' => $employment->id,
+                    'date_in' => $today,
+                    'time_in' => null,
+                    'time_out' => $timeNow,
+                    'method' => 'api_vision',
+                    'status' => 'Hadir',
+                    'image_path' => $imageName
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance successfully recorded for ' . $employment->name,
+            'data' => [
+                'nik' => $employment->nik,
+                'name' => $employment->name,
+                'type' => $type,
+                'date' => $today,
+                'time' => $timeNow,
+            ]
+        ]);
+    }
+
+    private function saveBase64Image($base64String, $nik)
+    {
+        try {
+            $image = preg_replace('/^data:image\/\w+;base64,/', '', $base64String);
+            $image = str_replace(' ', '+', $image);
+            $imageData = base64_decode($image);
+
+            $dir = public_path('images/absence');
+            if (!\Illuminate\Support\Facades\File::exists($dir)) {
+                \Illuminate\Support\Facades\File::makeDirectory($dir, 0777, true, true);
+            }
+
+            $filename = time() . '_' . $nik . '.jpg';
+            file_put_contents($dir . '/' . $filename, $imageData);
+            return $filename;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     public function show($employmentNik)
     {
+    }
+
+    public function create()
+    {
+        return redirect()->route('absence.scan');
+    }
+
+    public function edit()
+    {
+    }
+
+    public function update(Request $request, $employmentNik)
+    {
+    }
+
+    public function destroy($id)
+    {
+        $absence = Absence::find($id);
+        if ($absence) {
+            $absence->delete();
+            return redirect()->back()->with('success', 'Data absensi berhasil dihapus.');
+        }
+        return redirect()->back()->with('error', 'Data absensi tidak ditemukan.');
     }
 
     public function store(Request $request)
@@ -92,20 +330,5 @@ class AbsenceController extends Controller
         }
     }
 
-    public function create()
-    {
-        return view('employee.create', compact(['']));
-    }
 
-    public function edit()
-    {
-    }
-
-    public function update(Request $request, $employmentNik)
-    {
-    }
-
-    public function destroy($employmentNik)
-    {
-    }
 }

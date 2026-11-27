@@ -33,7 +33,7 @@ class BenefitController extends Controller
     public function edit()
     {
         $employeeNik = Route::current()->parameter('benefit');
-        $month = request()->query('month');
+        $month = request()->query('month') ?: date('Y-m');
         $employment = Employment::where('nik', $employeeNik)->first();
         if (!$employment) {
             return redirect()->route('benefit.index')->with('error', 'Data karyawan tidak ditemukan');
@@ -48,7 +48,27 @@ class BenefitController extends Controller
             Benefit::create($data);
             $benefit = Benefit::where('employment_id', $employment->id)->where('periode', $month)->first();
         }
-        return view('benefit.edit', compact(['employment', 'benefit']));
+
+        // Hitung otomatis data kehadiran dari tabel absences & history_leaves
+        $hadirCount = Absence::where('employment_id', $employment->id)
+            ->where('date_in', 'like', "{$month}%")
+            ->whereNotNull('time_in')
+            ->count();
+
+        $leavesCount = HistoryLeave::where('employment_id', $employment->id)
+            ->where('date_leave', 'like', "{$month}%")
+            ->count();
+
+        // Jika data cuti / absen baru dibuat, otomatis sinkronkan
+        if ($benefit->wasRecentlyCreated || ($benefit->leaves == 0 && $benefit->absence_leaves == 0)) {
+            if ($leavesCount > 0) $benefit->leaves = $leavesCount;
+            if ($hadirCount > 0) {
+                $calcAbsence = max(0, $benefit->day_of_works - $hadirCount - $leavesCount - $benefit->sick_leaves);
+                $benefit->absence_leaves = $calcAbsence;
+            }
+        }
+
+        return view('benefit.edit', compact(['employment', 'benefit', 'hadirCount', 'leavesCount']));
     }
 
     public function create()
