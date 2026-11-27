@@ -14,44 +14,45 @@ class DashboardController extends Controller
         $employments = Employment::whereDate('date_start_of_work', '>=', now()->subWeek())->get();
         $totalEmployments = Employment::count();
 
-        // Fetch public holidays for the current month and year
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
+        // Fetch public holidays safely with fallback
+        $publicHolidays = [];
+        try {
+            $currentYear = now()->year;
+            $url = "https://api-harilibur.vercel.app/api?year={$currentYear}";
 
-        $url = "https://api-harilibur.vercel.app/api?year={$currentYear}";
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            $response = curl_exec($ch);
+            curl_close($ch);
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        $response = curl_exec($ch);
+            $decoded = json_decode($response, true);
+            if (is_array($decoded)) {
+                $currentDate = now();
+                $filteredHolidays = [];
 
-        if (curl_errno($ch)) {
-            echo 'cURL error: ' . curl_error($ch);
-        }
-        curl_close($ch);
+                foreach ($decoded as $item) {
+                    if (!empty($item['holiday_date'])) {
+                        $date = Carbon::createFromFormat('Y-m-d', $item['holiday_date']);
+                        if ($date && $date->gte($currentDate)) {
+                            $item['day_of_week'] = $date->format('D');
+                            $filteredHolidays[] = $item;
+                        }
+                    }
+                }
 
-        $publicHolidays = json_decode($response, true);
-        for ($i = 0; $i < sizeof($publicHolidays); $i++) {
-            $date = Carbon::createFromFormat('Y-m-d', $publicHolidays[$i]['holiday_date']);
-            $publicHolidays[$i]['day_of_week'] = $date->format('D');
-        }
-        $currentDate = now();
-        $filteredHolidays = [];
-        usort($publicHolidays, function ($a, $b) {
-            $dateA = Carbon::createFromFormat('Y-m-d', $a['holiday_date']);
-            $dateB = Carbon::createFromFormat('Y-m-d', $b['holiday_date']);
-            return $dateA <=> $dateB;
-        });
-        for ($i = 0; $i < sizeof($publicHolidays); $i++) {
-            $date = Carbon::createFromFormat('Y-m-d', $publicHolidays[$i]['holiday_date']);
+                usort($filteredHolidays, function ($a, $b) {
+                    return strcmp($a['holiday_date'], $b['holiday_date']);
+                });
 
-            if ($date->gte($currentDate)) {
-                $publicHolidays[$i]['day_of_week'] = $date->format('D');
-                $filteredHolidays[] = $publicHolidays[$i];
+                $publicHolidays = $filteredHolidays;
             }
+        } catch (\Throwable $e) {
+            $publicHolidays = [];
         }
-        $publicHolidays = $filteredHolidays;
 
         return view('dashboard', compact('employments', 'totalEmployments', 'publicHolidays'))
             ->with('i', (request()->input('page', 1) - 1) * 5);

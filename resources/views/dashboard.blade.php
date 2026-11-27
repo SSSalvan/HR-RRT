@@ -115,10 +115,10 @@
                                 <div class="table-responsive">
                                     <table class="table table-spacing mb-0">
                                         <tbody>
-                                        @foreach($publicHolidays as $publicHoliday)
+                                        @forelse($publicHolidays as $publicHoliday)
                                             <tr class="white-space-no-wrap">
                                                 <td>
-                                                    <h6 class="mb-0 text-uppercase {{ $publicHoliday['is_national_holiday'] ? 'text-danger' :'text-secondary'}}">
+                                                    <h6 class="mb-0 text-uppercase {{ !empty($publicHoliday['is_national_holiday']) ? 'text-danger' :'text-secondary'}}">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="pr-2" width="30"
                                                              fill="none"
                                                              viewBox="0 0 24 24" stroke="currentColor">
@@ -126,15 +126,21 @@
                                                                   stroke-width="2"
                                                                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                                         </svg>
-                                                        {{$publicHoliday['day_of_week']}}
-                                                        , {{$publicHoliday['holiday_date']}}
+                                                        {{$publicHoliday['day_of_week'] ?? ''}}
+                                                        , {{$publicHoliday['holiday_date'] ?? ''}}
                                                     </h6>
                                                 </td>
                                                 <td class=" pl-0 py-3">
-                                                    {{$publicHoliday['holiday_name']}}
+                                                    {{$publicHoliday['holiday_name'] ?? ''}}
                                                 </td>
                                             </tr>
-                                        @endforeach
+                                        @empty
+                                            <tr>
+                                                <td colspan="2" class="text-center text-muted py-3">
+                                                    Tidak ada data libur nasional mendatang.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                         </tbody>
                                     </table>
                                 </div>
