@@ -49,8 +49,8 @@
     <tr>
         <td><strong>NAMA</strong></td>
         <td>: {{ $benefit->employment->name }}</td>
-        <td><strong>TMK</strong></td>
-        <td>: {{ Carbon::parse($benefit->employment->date_start_of_work)->format('d F Y') }}</td>
+        <td><strong>TMK (PTKP)</strong></td>
+        <td>: {{ Carbon::parse($benefit->employment->date_start_of_work)->format('d F Y') }} ({{ $benefit->employment->ptkp_status ?? 'TK/0' }})</td>
     </tr>
 </table>
 <br>
@@ -88,7 +88,13 @@ $pot_bpjs_kes = floor(0.01 * intval($gajiPokok));
 $pot_bpjs_tk = floor(0.03 * intval($gajiPokok));
 
 $burden = $benefit->burden;
-$potongan_pph_21 = $benefit->potongan_pph_21;
+$ptkpStatus = $benefit->employment->ptkp_status ?? 'TK/0';
+$brutoPph = intval($gajiPokok) + intval($kinerja) + intval($transportPerBulan) + intval($makanPerBulan) +
+    intval($BPJSKesehatanPendapatan) + intval($BPJSJKKPendapatan) + intval($BPJSJKMPendapatan) + intval($lembur) + intval($pendapatan_lainnya);
+$pph21Calc = \App\Services\Pph21Service::calculate($ptkpStatus, $brutoPph);
+$potongan_pph_21 = $benefit->potongan_pph_21 > 0 ? $benefit->potongan_pph_21 : $pph21Calc['tax_amount'];
+$terRateDisplay = $pph21Calc['rate_percent'];
+$terCategoryDisplay = $pph21Calc['category'];
 
 $sub_bpjs_kes = $BPJSKesehatanPendapatan;
 $sub_bpjs_tk = intval($BPJSJHTPendapatan) + intval($BPJSJKKPendapatan) + intval($BPJSJKMPendapatan) + intval($BPJSPensiunPendapatan);
@@ -165,7 +171,7 @@ $sisaCuti = $benefit->leave_rights - $totalAbsensi;
     <tr>
         <td>- Pendapatan Lainnya</td>
         <td>Rp. {{ number_format($pendapatan_lainnya, 0, '.', ',') }}</td>
-        <td width="15%" colspan="2">PPh Pasal 21</td>
+        <td width="15%" colspan="2">PPh 21 TER ({{ $ptkpStatus }} - Kat. {{ $terCategoryDisplay }} {{ $terRateDisplay }})</td>
         <td width="35%">Rp. {{ number_format($potongan_pph_21, 0, '.', ',') }}</td>
     </tr>
     <tr class="border">

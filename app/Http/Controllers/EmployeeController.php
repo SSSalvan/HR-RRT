@@ -113,6 +113,7 @@ class EmployeeController extends Controller
             'employment_role' => 'required|exists:employment_roles,id',
             'leave_quota' => 'required|numeric|min:0|max:365',
             'no_account' => 'nullable|numeric',
+            'ptkp_status' => 'nullable|string|in:TK/0,TK/1,TK/2,TK/3,K/0,K/1,K/2,K/3',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'date_of_birth' => 'nullable|date|before:today',
             'date_start_of_work' => 'nullable|date',
@@ -159,6 +160,7 @@ class EmployeeController extends Controller
             'image_path' => $imageName,
             'leave_quota' => $request->input('leave_quota'),
             'no_account' => $request->input('no_account'),
+            'ptkp_status' => $request->input('ptkp_status', 'TK/0'),
         ];
 
         Employment::create($data);
@@ -207,6 +209,7 @@ class EmployeeController extends Controller
             'employment_role' => 'required|exists:employment_roles,id',
             'leave_quota' => 'required|numeric|min:0|max:365',
             'no_account' => 'nullable|numeric',
+            'ptkp_status' => 'nullable|string|in:TK/0,TK/1,TK/2,TK/3,K/0,K/1,K/2,K/3',
             'image' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'date_of_birth' => 'nullable|date|before:today',
             'date_start_of_work' => 'nullable|date',
@@ -257,6 +260,7 @@ class EmployeeController extends Controller
             'employment_role_id' => $request->input('employment_role'),
             'leave_quota' => $request->input('leave_quota'),
             'no_account' => $request->input('no_account'),
+            'ptkp_status' => $request->input('ptkp_status', 'TK/0'),
         ]);
 
         return redirect()->route('employee.index')

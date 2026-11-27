@@ -96,6 +96,24 @@ class BenefitController extends Controller
             }
         }
 
+        if (!isset($request['potongan_pph_21']) || $request['potongan_pph_21'] === '') {
+            $gajiPokok = (float) ($request['basic_salary'] ?? 0);
+            $kinerja = (float) ($request['performance_allowances'] ?? 0);
+            $lembur = (float) ($request['overtime_allowances'] ?? 0);
+            $pendapatanLain = (float) ($request['other_allowances'] ?? 0);
+            $hariKerja = (int) ($request['day_of_works'] ?? 19);
+            $transportPerBulan = (float) ($request['transport_allowances'] ?? 0) * $hariKerja;
+            $makanPerBulan = (float) ($request['meal_allowances'] ?? 0) * $hariKerja;
+
+            $bpjsKes = $gajiPokok * 0.04;
+            $bpjsJkk = $gajiPokok * 0.0054;
+            $bpjsJkm = $gajiPokok * 0.003;
+
+            $gross = $gajiPokok + $kinerja + $lembur + $pendapatanLain + $transportPerBulan + $makanPerBulan + $bpjsKes + $bpjsJkk + $bpjsJkm;
+            $calc = \App\Services\Pph21Service::calculate($employment->ptkp_status ?? 'TK/0', $gross);
+            $request['potongan_pph_21'] = $calc['tax_amount'];
+        }
+
         $benefit->update($request->all());
 
         return redirect()->back()
@@ -163,7 +181,13 @@ class BenefitController extends Controller
         $pot_bpjs_tk = floor(0.03 * intval($gajiPokok));
 
         $burden = $benefit->burden;
-        $potongan_pph_21 = $benefit->potongan_pph_21;
+        $ptkpStatus = $employee->ptkp_status ?? 'TK/0';
+        $brutoPph = intval($gajiPokok) + intval($kinerja) + intval($transportPerBulan) + intval($makanPerBulan)
+            + intval($BPJSKesehatanPendapatan) + intval($BPJSJKKPendapatan) + intval($BPJSJKMPendapatan) + intval($lembur) + intval($pendapatan_lainnya);
+        $pph21Calc = \App\Services\Pph21Service::calculate($ptkpStatus, $brutoPph);
+        $potongan_pph_21 = $benefit->potongan_pph_21 > 0 ? $benefit->potongan_pph_21 : $pph21Calc['tax_amount'];
+        $terRateDisplay = $pph21Calc['rate_percent'];
+        $terCategoryDisplay = $pph21Calc['category'];
 
         $sub_bpjs_kes = $BPJSKesehatanPendapatan;
         $sub_bpjs_tk = intval($BPJSJHTPendapatan) + intval($BPJSJKKPendapatan) + intval($BPJSJKMPendapatan) + intval($BPJSPensiunPendapatan);
@@ -266,7 +290,7 @@ class BenefitController extends Controller
         $worksheet->setCellValue('G16', 'Subsidi BPJS TK');
         $worksheet->setCellValue('J16', ':');
         $worksheet->setCellValue('K16', 'Rp ' . number_format($sub_bpjs_tk, 0, '.', ','));
-        $worksheet->setCellValue('G17', 'PPh Pasal 21');
+        $worksheet->setCellValue('G17', 'PPh 21 TER (' . $ptkpStatus . ' ' . $terRateDisplay . ')');
         $worksheet->setCellValue('J17', ':');
         $worksheet->setCellValue('K17', 'Rp ' . number_format($potongan_pph_21, 0, '.', ','));
 

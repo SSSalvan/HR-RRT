@@ -559,64 +559,43 @@
                                                                value="0" readonly>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6 mb-3">
-                                                    <div class="d-flex align-items-center">
-                                                        <label style="width: 50%;" for="sub_bpjs_tk"
-                                                               class="form-label font-weight-bold text-muted text-uppercase">POTONGAN
-                                                            PPH 21
-                                                            :</label>
-                                                        <input style="width: 50%;" type="text"
-                                                               class="form-control rupiah"
-                                                               id="potongan_pph_21" name="potongan_pph_21"
-                                                               placeholder=""
-                                                               value="{{$benefit->potongan_pph_21}}">
+                                                <div class="col-md-12 mb-3">
+                                                    <div class="card bg-light border p-3">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="font-weight-bold text-primary mb-0">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-shield-check mr-1" viewBox="0 0 16 16">
+                                                                    <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.464 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.935 10.487.552 7.168 1.148 2.692A1.54 1.54 0 0 1 2.192 1.43C2.85 1.215 3.97.86 5.072.56z"/>
+                                                                    <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                                                </svg>
+                                                                Perhitungan Pajak PPh 21 TER (PP 58/2023)
+                                                            </h6>
+                                                            <div>
+                                                                <span class="badge badge-info mr-1">PTKP: <strong id="ptkp_badge">{{ $employment->ptkp_status ?? 'TK/0' }}</strong></span>
+                                                                <span class="badge badge-success">Kategori: <strong id="ter_category_badge">TER {{ \App\Services\Pph21Service::getCategory($employment->ptkp_status ?? 'TK/0') }}</strong></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row align-items-center">
+                                                            <div class="col-md-4">
+                                                                <small class="text-muted d-block">Penghasilan Bruto PPh 21:</small>
+                                                                <h6 id="display_bruto" class="font-weight-bold text-dark mb-0">Rp 0</h6>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <small class="text-muted d-block">Tarif Efektif (TER):</small>
+                                                                <span class="badge badge-warning text-dark font-weight-bold" id="display_ter_rate" style="font-size: 14px;">0%</span>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <div class="d-flex align-items-center justify-content-between">
+                                                                    <label for="potongan_pph_21" class="form-label font-weight-bold text-danger mb-0 text-uppercase">Potongan PPh 21:</label>
+                                                                    <div class="form-check form-check-inline m-0">
+                                                                        <input class="form-check-input" type="checkbox" id="auto_pph21" checked onchange="toggleAutoPph(this)">
+                                                                        <label class="form-check-label text-muted small" for="auto_pph21">Auto</label>
+                                                                    </div>
+                                                                </div>
+                                                                <input type="text" class="form-control rupiah mt-1" id="potongan_pph_21" name="potongan_pph_21"
+                                                                       value="{{$benefit->potongan_pph_21}}" readonly style="font-weight: bold; color: #dc3545;">
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {{--                                                <div class="col-md-6 mb-3">--}}
-                                                {{--                                                    <div class="row align-items-center justify-content-between">--}}
-                                                {{--                                                        <div class="col-md-6">--}}
-                                                {{--                                                            <label for="pph"--}}
-                                                {{--                                                                   class="form-label font-weight-bold text-muted text-uppercase">Potongan--}}
-                                                {{--                                                                PPH :</label>--}}
-                                                {{--                                                            <div class="btn-group btn-group-sm" data-toggle="buttons">--}}
-                                                {{--                                                                <label class="btn btn-secondary @if($benefit->persenpph == 5) active @endif">--}}
-                                                {{--                                                                    <input type="radio" id="pph5" name="persenpph"--}}
-                                                {{--                                                                           value="5"--}}
-                                                {{--                                                                           @if($benefit->persenpph == 5) checked @endif>--}}
-                                                {{--                                                                    5%--}}
-                                                {{--                                                                </label>--}}
-                                                {{--                                                                <label class="btn btn-secondary @if($benefit->persenpph == 15) active @endif">--}}
-                                                {{--                                                                    <input type="radio" id="pph15" name="persenpph"--}}
-                                                {{--                                                                           value="15"--}}
-                                                {{--                                                                           @if($benefit->persenpph == 15) checked @endif>--}}
-                                                {{--                                                                    15%--}}
-                                                {{--                                                                </label>--}}
-                                                {{--                                                                <label class="btn btn-secondary @if($benefit->persenpph == 25) active @endif">--}}
-                                                {{--                                                                    <input type="radio" id="pph25" name="persenpph"--}}
-                                                {{--                                                                           value="25"--}}
-                                                {{--                                                                           @if($benefit->persenpph == 25) checked @endif>--}}
-                                                {{--                                                                    25%--}}
-                                                {{--                                                                </label>--}}
-                                                {{--                                                                <label class="btn btn-secondary @if($benefit->persenpph == 30) active @endif">--}}
-                                                {{--                                                                    <input type="radio" id="pph30" name="persenpph"--}}
-                                                {{--                                                                           value="30"--}}
-                                                {{--                                                                           @if($benefit->persenpph == 30) checked @endif>--}}
-                                                {{--                                                                    30%--}}
-                                                {{--                                                                </label>--}}
-                                                {{--                                                            </div>--}}
-
-
-                                                {{--                                                        </div>--}}
-                                                {{--                                                        <div class="col-md-6">--}}
-                                                {{--                                                            <input style="width: 100%;" type="text"--}}
-                                                {{--                                                                   class="form-control rupiah" id="pph" name="pph"--}}
-                                                {{--                                                                   placeholder="0" value="0" readonly>--}}
-                                                {{--                                                        </div>--}}
-                                                {{--                                                    </div>--}}
-                                                {{--                                                </div>--}}
-                                                <div class="col-md-6 mb-3">
-                                                </div>
-                                                <div class="col-md-6 mb-3">
                                                 </div>
                                                 <div class="col-md-6 mb-3">
                                                     <div class="d-flex align-items-center">
@@ -707,11 +686,154 @@
             });
         }
 
-        var radioButtons = document.getElementsByName('persenpph');
-        for (var i = 0; i < radioButtons.length; i++) {
-            radioButtons[i].addEventListener('change', function () {
+        function getPph21Category(ptkp) {
+            ptkp = (ptkp || 'TK/0').toUpperCase().trim();
+            if (['TK/0', 'TK/1', 'K/0'].includes(ptkp)) return 'A';
+            if (['TK/2', 'TK/3', 'K/1', 'K/2'].includes(ptkp)) return 'B';
+            if (ptkp === 'K/3') return 'C';
+            return 'A';
+        }
+
+        function getPph21TerRate(category, bruto) {
+            if (category === 'A') {
+                if (bruto <= 5400000) return 0.0;
+                if (bruto <= 5650000) return 0.0025;
+                if (bruto <= 5950000) return 0.005;
+                if (bruto <= 6300000) return 0.0075;
+                if (bruto <= 6750000) return 0.01;
+                if (bruto <= 7500000) return 0.0125;
+                if (bruto <= 8550000) return 0.015;
+                if (bruto <= 9650000) return 0.0175;
+                if (bruto <= 10050000) return 0.02;
+                if (bruto <= 10350000) return 0.0225;
+                if (bruto <= 10700000) return 0.025;
+                if (bruto <= 11050000) return 0.03;
+                if (bruto <= 11600000) return 0.035;
+                if (bruto <= 12500000) return 0.04;
+                if (bruto <= 13750000) return 0.05;
+                if (bruto <= 15100000) return 0.06;
+                if (bruto <= 16950000) return 0.07;
+                if (bruto <= 19750000) return 0.08;
+                if (bruto <= 24150000) return 0.09;
+                if (bruto <= 26450000) return 0.10;
+                if (bruto <= 28000000) return 0.11;
+                if (bruto <= 30050000) return 0.12;
+                if (bruto <= 32400000) return 0.13;
+                if (bruto <= 35400000) return 0.14;
+                if (bruto <= 39100000) return 0.15;
+                if (bruto <= 43850000) return 0.16;
+                if (bruto <= 47800000) return 0.17;
+                if (bruto <= 51400000) return 0.18;
+                if (bruto <= 56300000) return 0.19;
+                if (bruto <= 62200000) return 0.20;
+                if (bruto <= 68600000) return 0.21;
+                if (bruto <= 77500000) return 0.22;
+                if (bruto <= 89000000) return 0.23;
+                if (bruto <= 103000000) return 0.24;
+                if (bruto <= 125000000) return 0.25;
+                if (bruto <= 157000000) return 0.26;
+                if (bruto <= 206000000) return 0.27;
+                if (bruto <= 337000000) return 0.28;
+                if (bruto <= 454000000) return 0.29;
+                if (bruto <= 550000000) return 0.30;
+                if (bruto <= 695000000) return 0.31;
+                if (bruto <= 910000000) return 0.32;
+                if (bruto <= 1400000000) return 0.33;
+                return 0.34;
+            } else if (category === 'B') {
+                if (bruto <= 6200000) return 0.0;
+                if (bruto <= 6500000) return 0.0025;
+                if (bruto <= 6850000) return 0.005;
+                if (bruto <= 7300000) return 0.0075;
+                if (bruto <= 9200000) return 0.01;
+                if (bruto <= 10750000) return 0.015;
+                if (bruto <= 11250000) return 0.02;
+                if (bruto <= 11600000) return 0.025;
+                if (bruto <= 12600000) return 0.03;
+                if (bruto <= 13600000) return 0.04;
+                if (bruto <= 14950000) return 0.05;
+                if (bruto <= 16400000) return 0.06;
+                if (bruto <= 18450000) return 0.07;
+                if (bruto <= 21850000) return 0.08;
+                if (bruto <= 26000000) return 0.09;
+                if (bruto <= 27700000) return 0.10;
+                if (bruto <= 29350000) return 0.11;
+                if (bruto <= 31450000) return 0.12;
+                if (bruto <= 33950000) return 0.13;
+                if (bruto <= 37100000) return 0.14;
+                if (bruto <= 41100000) return 0.15;
+                if (bruto <= 45800000) return 0.16;
+                if (bruto <= 49500000) return 0.17;
+                if (bruto <= 53800000) return 0.18;
+                if (bruto <= 58500000) return 0.19;
+                if (bruto <= 64000000) return 0.20;
+                if (bruto <= 71000000) return 0.21;
+                if (bruto <= 80000000) return 0.22;
+                if (bruto <= 93000000) return 0.23;
+                if (bruto <= 109000000) return 0.24;
+                if (bruto <= 129000000) return 0.25;
+                if (bruto <= 163000000) return 0.26;
+                if (bruto <= 211000000) return 0.27;
+                if (bruto <= 374000000) return 0.28;
+                if (bruto <= 459000000) return 0.29;
+                if (bruto <= 555000000) return 0.30;
+                if (bruto <= 704000000) return 0.31;
+                if (bruto <= 957000000) return 0.32;
+                if (bruto <= 1405000000) return 0.33;
+                return 0.34;
+            } else {
+                if (bruto <= 6600000) return 0.0;
+                if (bruto <= 6950000) return 0.0025;
+                if (bruto <= 7350000) return 0.005;
+                if (bruto <= 7800000) return 0.0075;
+                if (bruto <= 8850000) return 0.01;
+                if (bruto <= 9800000) return 0.0125;
+                if (bruto <= 10950000) return 0.015;
+                if (bruto <= 11200000) return 0.0175;
+                if (bruto <= 12050000) return 0.02;
+                if (bruto <= 12950000) return 0.03;
+                if (bruto <= 14150000) return 0.04;
+                if (bruto <= 15550000) return 0.05;
+                if (bruto <= 17050000) return 0.06;
+                if (bruto <= 19500000) return 0.07;
+                if (bruto <= 22700000) return 0.08;
+                if (bruto <= 26600000) return 0.09;
+                if (bruto <= 28100000) return 0.10;
+                if (bruto <= 30100000) return 0.11;
+                if (bruto <= 32600000) return 0.12;
+                if (bruto <= 35400000) return 0.13;
+                if (bruto <= 38900000) return 0.14;
+                if (bruto <= 43000000) return 0.15;
+                if (bruto <= 47400000) return 0.16;
+                if (bruto <= 51200000) return 0.17;
+                if (bruto <= 55800000) return 0.18;
+                if (bruto <= 60400000) return 0.19;
+                if (bruto <= 66700000) return 0.20;
+                if (bruto <= 74500000) return 0.21;
+                if (bruto <= 83200000) return 0.22;
+                if (bruto <= 95600000) return 0.23;
+                if (bruto <= 110000000) return 0.24;
+                if (bruto <= 134000000) return 0.25;
+                if (bruto <= 169000000) return 0.26;
+                if (bruto <= 221000000) return 0.27;
+                if (bruto <= 390000000) return 0.28;
+                if (bruto <= 463000000) return 0.29;
+                if (bruto <= 561000000) return 0.30;
+                if (bruto <= 709000000) return 0.31;
+                if (bruto <= 965000000) return 0.32;
+                if (bruto <= 1419000000) return 0.33;
+                return 0.34;
+            }
+        }
+
+        function toggleAutoPph(checkbox) {
+            var pphInput = document.getElementById('potongan_pph_21');
+            if (checkbox.checked) {
+                pphInput.readOnly = true;
                 hitung();
-            });
+            } else {
+                pphInput.readOnly = false;
+            }
         }
 
         function hitung() {
@@ -768,20 +890,33 @@
             document.getElementById('sub_bpjs_kes').value = parseInt(BPJSKesehatanPendapatan);
             document.getElementById('sub_bpjs_tk').value = parseInt(BPJSJHTPendapatan) + parseInt(BPJSJKKPendapatan) + parseInt(BPJSJKMPendapatan) + parseInt(BPJSPensiunPendapatan);
             var burden = document.getElementById('burden').value.replace(/,/g, '');
+
+            // Hitung Bruto untuk PPh 21 TER (Gaji Pokok + Tunjangan + Premi BPJS ditanggung pemberi kerja)
+            var brutoPph = parseInt(gajiPokok) + parseInt(kinerja) + parseInt(lembur) + parseInt(pendapatan_lainnya) +
+                parseInt(transportPerBulan) + parseInt(makanPerBulan) +
+                parseInt(BPJSKesehatanPendapatan) + parseInt(BPJSJKKPendapatan) + parseInt(BPJSJKMPendapatan);
+
+            var ptkpStatus = '{{ $employment->ptkp_status ?? "TK/0" }}';
+            var terCategory = getPph21Category(ptkpStatus);
+            var terRate = getPph21TerRate(terCategory, brutoPph);
+
+            var elDisplayBruto = document.getElementById('display_bruto');
+            if (elDisplayBruto) {
+                elDisplayBruto.innerText = 'Rp ' + (isNaN(brutoPph) ? 0 : brutoPph).toLocaleString('id-ID');
+            }
+            var elDisplayRate = document.getElementById('display_ter_rate');
+            if (elDisplayRate) {
+                elDisplayRate.innerText = (terRate * 100).toFixed(2) + '%';
+            }
+
+            var autoPph = document.getElementById('auto_pph21');
+            if (autoPph && autoPph.checked) {
+                var calcPph = Math.round(brutoPph * terRate);
+                document.getElementById('potongan_pph_21').value = isNaN(calcPph) ? 0 : calcPph;
+            }
+
             var potongan_pph_21 = document.getElementById('potongan_pph_21').value.replace(/,/g, '');
-
-            // var persenBPJSPPH;
-            // var radioButtons = document.getElementsByName('persenpph');
-
-            // for (var i = 0; i < radioButtons.length; i++) {
-            //     if (radioButtons[i].checked) {
-            //         persenBPJSPPH = radioButtons[i].value;
-            //         break;
-            //     }
-            // }
-            // if (persenBPJSPPH === undefined) {
-            //     persenBPJSPPH = 5;
-            // }
+            if (isNaN(parseInt(potongan_pph_21))) potongan_pph_21 = 0;
 
             var totalPotongan = parseInt(pot_absensi) + parseInt(pot_transport) + parseInt(pot_makan) + parseInt(burden) + parseInt(pot_bpjs_kes) + parseInt(pot_bpjs_tk) +
                 parseInt(BPJSKesehatanPendapatan) + parseInt(BPJSJHTPendapatan) + parseInt(BPJSJKKPendapatan) + parseInt(BPJSJKMPendapatan) + parseInt(BPJSPensiunPendapatan)

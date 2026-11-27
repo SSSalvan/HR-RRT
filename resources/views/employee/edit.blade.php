@@ -347,6 +347,22 @@
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                         </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="ptkp_status"
+                                                   class="form-label font-weight-bold text-muted text-uppercase">Status PTKP (PPh 21)<span style="color: red">*</span></label>
+                                            <select id="ptkp_status" name="ptkp_status" class="form-select form-control" required>
+                                                @php $currentPtkp = old('ptkp_status', $employment->ptkp_status ?? 'TK/0'); @endphp
+                                                <option value="TK/0" {{ $currentPtkp == 'TK/0' ? 'selected' : '' }}>TK/0 - Tidak Kawin (0 Tanggungan) [TER A]</option>
+                                                <option value="TK/1" {{ $currentPtkp == 'TK/1' ? 'selected' : '' }}>TK/1 - Tidak Kawin (1 Tanggungan) [TER A]</option>
+                                                <option value="TK/2" {{ $currentPtkp == 'TK/2' ? 'selected' : '' }}>TK/2 - Tidak Kawin (2 Tanggungan) [TER B]</option>
+                                                <option value="TK/3" {{ $currentPtkp == 'TK/3' ? 'selected' : '' }}>TK/3 - Tidak Kawin (3 Tanggungan) [TER B]</option>
+                                                <option value="K/0" {{ $currentPtkp == 'K/0' ? 'selected' : '' }}>K/0 - Kawin (0 Tanggungan) [TER A]</option>
+                                                <option value="K/1" {{ $currentPtkp == 'K/1' ? 'selected' : '' }}>K/1 - Kawin (1 Tanggungan) [TER B]</option>
+                                                <option value="K/2" {{ $currentPtkp == 'K/2' ? 'selected' : '' }}>K/2 - Kawin (2 Tanggungan) [TER B]</option>
+                                                <option value="K/3" {{ $currentPtkp == 'K/3' ? 'selected' : '' }}>K/3 - Kawin (3 Tanggungan) [TER C]</option>
+                                            </select>
+                                            <small class="form-text text-muted">Kategori TER (A, B, C) dihitung otomatis sesuai PP 58/2023</small>
+                                        </div>
                                     </div>
                                     <div class="row mt-3">
                                         <div class="col-12">

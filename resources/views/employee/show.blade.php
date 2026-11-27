@@ -138,6 +138,14 @@
                                             <p class="mb-0 ">{{$employment->address}}</p>
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td class="p-0">
+                                            <p class="mb-0 text-muted">Status PTKP</p>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-primary font-weight-bold">{{$employment->ptkp_status ?? 'TK/0'}}</span>
+                                        </td>
+                                    </tr>
                                 </table>
                             </li>
                         </ul>

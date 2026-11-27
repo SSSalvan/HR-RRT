@@ -29,7 +29,8 @@ class Employment extends Model
         'employment_division_id',
         'employment_role_id',
         'leave_quota',
-        'no_account'
+        'no_account',
+        'ptkp_status'
     ];
 
     public function employmentRole()
