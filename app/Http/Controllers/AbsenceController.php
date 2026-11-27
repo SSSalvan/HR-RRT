@@ -29,13 +29,62 @@ class AbsenceController extends Controller
     public function scan()
     {
         $employments = Employment::with('employmentRole', 'employmentDivision')->orderBy('name')->get();
+        $enrolledEmployees = Employment::whereNotNull('face_descriptor')
+            ->select('id', 'nik', 'name', 'face_descriptor', 'image_path')
+            ->get();
+
         $todayAbsences = Absence::with('employment')
             ->where('date_in', date('Y-m-d'))
             ->latest()
             ->take(10)
             ->get();
 
-        return view('absence.scan', compact('employments', 'todayAbsences'));
+        return view('absence.scan', compact('employments', 'enrolledEmployees', 'todayAbsences'));
+    }
+
+    public function enrollFace(Request $request)
+    {
+        $request->validate([
+            'nik' => 'required',
+            'descriptor' => 'required',
+        ]);
+
+        $employment = Employment::where('nik', $request->input('nik'))
+            ->orWhere('id', $request->input('nik'))
+            ->first();
+
+        if (!$employment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data karyawan tidak ditemukan.'
+            ], 404);
+        }
+
+        $imageName = $employment->image_path;
+        if ($request->filled('image')) {
+            $imageName = $this->saveBase64Image($request->input('image'), 'enroll_' . $employment->nik);
+        }
+
+        $descriptor = $request->input('descriptor');
+        if (is_array($descriptor)) {
+            $descriptor = json_encode($descriptor);
+        }
+
+        $employment->update([
+            'face_descriptor' => $descriptor,
+            'image_path' => $imageName ?? $employment->image_path
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Wajah {$employment->name} ({$employment->nik}) berhasil didaftarkan ke sistem AI biometrik!",
+            'data' => [
+                'nik' => $employment->nik,
+                'name' => $employment->name,
+                'face_descriptor' => $descriptor,
+                'image' => $imageName ? asset('images/absence/' . $imageName) : null
+            ]
+        ]);
     }
 
     public function webCheckIn(Request $request)

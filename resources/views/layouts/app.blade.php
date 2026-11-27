@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="PxEWRCbSiVH8HA8yEWpBDv2sOAUbkcLdxvCs0w6Z">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Human Resource</title>
     <link rel="shortcut icon" href="{{asset('images/favicon.ico')}}"/>
     <link rel='stylesheet' href="{{asset('vendor/fullcalendar/core/main.css')}}"/>

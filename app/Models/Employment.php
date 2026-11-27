@@ -30,7 +30,8 @@ class Employment extends Model
         'employment_role_id',
         'leave_quota',
         'no_account',
-        'ptkp_status'
+        'ptkp_status',
+        'face_descriptor'
     ];
 
     public function employmentRole()
